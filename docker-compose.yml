@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: tenant-ai-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: tenantai
+      POSTGRES_PASSWORD: tenantai_local_dev
+      POSTGRES_DB: tenantai
+    ports:
+      - "5433:5432"
+    volumes:
+      - tenantai-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tenantai -d tenantai"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  tenantai-postgres-data:
