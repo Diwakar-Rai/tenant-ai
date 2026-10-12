@@ -10,10 +10,12 @@ export class AccessDeniedError extends Error {
 async function getAuthorizedOrganization(
   userEmail: string,
   organizationSlug: string,
+  keycloakId: string,
 ) {
   const membership = await projectRepository.findMembership(
     userEmail,
     organizationSlug,
+    keycloakId,
   );
 
   if (!membership) {
@@ -23,26 +25,44 @@ async function getAuthorizedOrganization(
   return membership.organization;
 }
 
-export const projectService = {
-  async listProjects(userEmail: string, organizationSlug: string) {
-    const organization = await getAuthorizedOrganization(
-      userEmail,
-      organizationSlug,
-    );
+export class ForbiddenActionError extends Error {
+  constructor(message = "Administrator role required") {
+    super(message);
+    this.name = "ForbiddenActionError";
+  }
+}
 
-    return projectRepository.findAll(organization.id);
+async function getMembership(keycloakId: string, organizationSlug: string) {
+  const membership = await projectRepository.findMembership(
+    keycloakId,
+    organizationSlug,
+  );
+
+  if (!membership) {
+    throw new AccessDeniedError();
+  }
+
+  return membership;
+}
+
+export const projectService = {
+  async listProjects(keycloakId: string, organizationSlug: string) {
+    const membership = await getMembership(keycloakId, organizationSlug);
+
+    return projectRepository.findAll(membership.organizationId);
   },
 
   async createProject(
-    userEmail: string,
+    keycloakId: string,
     organizationSlug: string,
     data: { name: string; description?: string },
   ) {
-    const organization = await getAuthorizedOrganization(
-      userEmail,
-      organizationSlug,
-    );
+    const membership = await getMembership(keycloakId, organizationSlug);
 
-    return projectRepository.create(organization.id, data);
+    if (membership.role !== "ADMIN") {
+      throw new ForbiddenActionError();
+    }
+
+    return projectRepository.create(membership.organizationId, data);
   },
 };

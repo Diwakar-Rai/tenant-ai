@@ -15,6 +15,7 @@ enum MembershipRole {
 
 model User {
   id          String       @id @default(cuid())
+  keycloakId  String?      @unique
   email       String       @unique
   name        String
   memberships Membership[]

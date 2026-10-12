@@ -1,10 +1,10 @@
 import { prisma } from "../../lib/prisma.js";
 
 export const projectRepository = {
-  findMembership(userEmail: string, organizationSlug: string) {
+  findMembership(keycloakId: string, organizationSlug: string) {
     return prisma.membership.findFirst({
       where: {
-        user: { email: userEmail },
+        user: { keycloakId },
         organization: { slug: organizationSlug },
       },
       include: {

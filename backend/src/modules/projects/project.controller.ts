@@ -1,25 +1,25 @@
 import type { Request, Response } from "express";
 import { z } from "zod";
-import { AccessDeniedError, projectService } from "./project.service.js";
+import {
+  AccessDeniedError,
+  ForbiddenActionError,
+  projectService,
+} from "./project.service.js";
 
 const createProjectSchema = z.object({
   name: z.string().trim().min(2).max(100),
   description: z.string().trim().max(500).optional(),
 });
 
-function getIdentity(req: Request) {
-  const email = req.header("x-dev-user-email");
-  const organizationSlug = req.header("x-organization-slug");
-
-  if (!email || !organizationSlug) {
-    return null;
-  }
-
-  return { email, organizationSlug };
+function getOrganizationSlug(req: Request) {
+  return req.header("x-organization-slug");
 }
 
 function handleError(res: Response, error: unknown) {
-  if (error instanceof AccessDeniedError) {
+  if (
+    error instanceof AccessDeniedError ||
+    error instanceof ForbiddenActionError
+  ) {
     return res.status(403).json({ error: error.message });
   }
 
@@ -29,18 +29,23 @@ function handleError(res: Response, error: unknown) {
 
 export const projectController = {
   async list(req: Request, res: Response) {
-    const identity = getIdentity(req);
+    const user = req.authUser;
+    const organizationSlug = getOrganizationSlug(req);
 
-    if (!identity) {
-      return res.status(401).json({
-        error: "Missing development identity or organization headers",
+    if (!user) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    if (!organizationSlug) {
+      return res.status(400).json({
+        error: "Missing x-organization-slug header",
       });
     }
 
     try {
       const projects = await projectService.listProjects(
-        identity.email,
-        identity.organizationSlug,
+        user.keycloakId,
+        organizationSlug,
       );
 
       return res.json({ data: projects });
@@ -50,11 +55,16 @@ export const projectController = {
   },
 
   async create(req: Request, res: Response) {
-    const identity = getIdentity(req);
+    const user = req.authUser;
+    const organizationSlug = getOrganizationSlug(req);
 
-    if (!identity) {
-      return res.status(401).json({
-        error: "Missing development identity or organization headers",
+    if (!user) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    if (!organizationSlug) {
+      return res.status(400).json({
+        error: "Missing x-organization-slug header",
       });
     }
 
@@ -69,8 +79,8 @@ export const projectController = {
 
     try {
       const project = await projectService.createProject(
-        identity.email,
-        identity.organizationSlug,
+        user.keycloakId,
+        organizationSlug,
         parsed.data,
       );
 

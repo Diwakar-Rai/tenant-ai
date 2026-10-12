@@ -1,25 +1,10 @@
 import "dotenv/config";
-import { prisma } from "../lib/prisma.js";
+import { PrismaClient, MembershipRole } from "@prisma/client";
+
+const prisma = new PrismaClient();
 
 async function main() {
-  const alice = await prisma.user.upsert({
-    where: { email: "alice@acme.test" },
-    update: { name: "Alice" },
-    create: {
-      email: "alice@acme.test",
-      name: "Alice",
-    },
-  });
-
-  const bob = await prisma.user.upsert({
-    where: { email: "bob@globex.test" },
-    update: { name: "Bob" },
-    create: {
-      email: "bob@globex.test",
-      name: "Bob",
-    },
-  });
-
+  // 1. Create organizations
   const acme = await prisma.organization.upsert({
     where: { slug: "acme" },
     update: { name: "Acme Inc." },
@@ -32,6 +17,34 @@ async function main() {
     create: { name: "Globex Ltd.", slug: "globex" },
   });
 
+  // 2. Create users (email belongs to User, not Membership)
+  const alice = await prisma.user.upsert({
+    where: { email: "alice@acme.test" },
+    update: {
+      name: "Alice",
+      keycloakId: "11111111-1111-4111-8111-111111111111",
+    },
+    create: {
+      email: "alice@acme.test",
+      name: "Alice",
+      keycloakId: "11111111-1111-4111-8111-111111111111",
+    },
+  });
+
+  const bob = await prisma.user.upsert({
+    where: { email: "bob@globex.test" },
+    update: {
+      name: "Bob",
+      keycloakId: "22222222-2222-4222-8222-222222222222",
+    },
+    create: {
+      email: "bob@globex.test",
+      name: "Bob",
+      keycloakId: "22222222-2222-4222-8222-222222222222",
+    },
+  });
+
+  // 3. Create memberships using the composite unique key
   await prisma.membership.upsert({
     where: {
       userId_organizationId: {
@@ -39,11 +52,11 @@ async function main() {
         organizationId: acme.id,
       },
     },
-    update: { role: "ADMIN" },
+    update: { role: MembershipRole.ADMIN },
     create: {
       userId: alice.id,
       organizationId: acme.id,
-      role: "ADMIN",
+      role: MembershipRole.ADMIN,
     },
   });
 
@@ -54,35 +67,44 @@ async function main() {
         organizationId: globex.id,
       },
     },
-    update: { role: "MEMBER" },
+    update: { role: MembershipRole.ADMIN },
     create: {
       userId: bob.id,
       organizationId: globex.id,
-      role: "MEMBER",
+      role: MembershipRole.ADMIN,
     },
   });
 
+  // 4. Create demo projects
   await prisma.project.upsert({
     where: { id: "acme-demo-project" },
-    update: {},
+    update: {
+      name: "Acme Demo Project",
+      organizationId: acme.id,
+    },
     create: {
       id: "acme-demo-project",
-      name: "Acme Dashboard",
+      name: "Acme Demo Project",
+      description: "Demo project for Acme Inc.",
       organizationId: acme.id,
     },
   });
 
   await prisma.project.upsert({
     where: { id: "globex-demo-project" },
-    update: {},
+    update: {
+      name: "Globex Demo Project",
+      organizationId: globex.id,
+    },
     create: {
       id: "globex-demo-project",
-      name: "Globex Analytics",
+      name: "Globex Demo Project",
+      description: "Demo project for Globex Ltd.",
       organizationId: globex.id,
     },
   });
 
-  console.log("Development organizations, users, and memberships ready.");
+  console.log("TenantAI seed completed successfully.");
 }
 
 main()

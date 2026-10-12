@@ -1,0 +1,57 @@
+{
+  "realm": "tenant-ai",
+  "enabled": true,
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "clients": [
+    {
+      "clientId": "tenant-ai-frontend",
+      "name": "TenantAI Frontend",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": ["http://localhost:3000/*"],
+      "webOrigins": ["http://localhost:3000"],
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      }
+    }
+  ],
+  "users": [
+    {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "username": "alice",
+      "enabled": true,
+      "email": "alice@acme.test",
+      "emailVerified": true,
+      "firstName": "Alice",
+      "lastName": "Admin",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "AlicePass123!",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "id": "22222222-2222-4222-8222-222222222222",
+      "username": "bob",
+      "enabled": true,
+      "email": "bob@globex.test",
+      "emailVerified": true,
+      "firstName": "Bob",
+      "lastName": "Member",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "BobPass123!",
+          "temporary": false
+        }
+      ]
+    }
+  ]
+}
