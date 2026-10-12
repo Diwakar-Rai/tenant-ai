@@ -1,9 +1,16 @@
 import { prisma } from "../../lib/prisma.js";
 
 export const projectRepository = {
-  findOrganizationBySlug(slug: string) {
-    return prisma.organization.findUnique({
-      where: { slug },
+  findMembership(userEmail: string, organizationSlug: string) {
+    return prisma.membership.findFirst({
+      where: {
+        user: { email: userEmail },
+        organization: { slug: organizationSlug },
+      },
+      include: {
+        organization: true,
+        user: true,
+      },
     });
   },
 

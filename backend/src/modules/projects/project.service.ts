@@ -1,26 +1,47 @@
 import { projectRepository } from "./project.repository.js";
 
-const demoOrgSlug = process.env.DEMO_ORG_SLUG || "tenant-ai-demo";
+export class AccessDeniedError extends Error {
+  constructor(message = "User is not a member of this organization") {
+    super(message);
+    this.name = "AccessDeniedError";
+  }
+}
 
-async function getDemoOrganization() {
-  const organization =
-    await projectRepository.findOrganizationBySlug(demoOrgSlug);
+async function getAuthorizedOrganization(
+  userEmail: string,
+  organizationSlug: string,
+) {
+  const membership = await projectRepository.findMembership(
+    userEmail,
+    organizationSlug,
+  );
 
-  if (!organization) {
-    throw new Error("Demo organization not found. Run npm run db:seed first.");
+  if (!membership) {
+    throw new AccessDeniedError();
   }
 
-  return organization;
+  return membership.organization;
 }
 
 export const projectService = {
-  async listProjects() {
-    const organization = await getDemoOrganization();
+  async listProjects(userEmail: string, organizationSlug: string) {
+    const organization = await getAuthorizedOrganization(
+      userEmail,
+      organizationSlug,
+    );
+
     return projectRepository.findAll(organization.id);
   },
 
-  async createProject(data: { name: string; description?: string }) {
-    const organization = await getDemoOrganization();
+  async createProject(
+    userEmail: string,
+    organizationSlug: string,
+    data: { name: string; description?: string },
+  ) {
+    const organization = await getAuthorizedOrganization(
+      userEmail,
+      organizationSlug,
+    );
 
     return projectRepository.create(organization.id, data);
   },
