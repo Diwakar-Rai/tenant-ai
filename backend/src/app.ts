@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import projectRoutes from "./modules/projects/project.routes.js";
+import aiRoutes from "./modules/ai/ai.routes.js";
 import { requireAuth } from "./middleware/auth.js";
 
 const app = express();
@@ -18,5 +19,6 @@ app.get("/health", (_req, res) => {
 });
 
 app.use("/api/projects", requireAuth, projectRoutes);
+app.use("/api/ai", requireAuth, aiRoutes);
 
 export default app;

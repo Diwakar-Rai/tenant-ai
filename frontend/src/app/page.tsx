@@ -2,6 +2,7 @@
 
 import { useCallback, useState } from "react";
 import { useAuth } from "../components/AuthProvider";
+import ProjectAI from "@/components/ProjectAi";
 
 type Project = {
   id: string;
@@ -68,6 +69,7 @@ export default function Home() {
           </li>
         ))}
       </ul>
+      <ProjectAI projects={projects} organizationSlug="acme" />
     </main>
   );
 }

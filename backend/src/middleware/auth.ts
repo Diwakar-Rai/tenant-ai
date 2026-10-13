@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import { createRemoteJWKSet, jwtVerify } from "jose";
 
-const issuer = "http://localhost:8080/realms/tenant-ai";
+const issuer = "http://localhost:8081/realms/tenant-ai";
 
 const jwks = createRemoteJWKSet(
   new URL(`${issuer}/protocol/openid-connect/certs`),
@@ -54,7 +54,9 @@ export async function requireAuth(
     };
 
     return next();
-  } catch {
+  } catch (error) {
+    console.error("Keycloak token verification failed:", error);
+
     return res.status(401).json({
       error: "Invalid or expired access token",
     });

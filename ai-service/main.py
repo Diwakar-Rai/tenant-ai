@@ -5,8 +5,14 @@ from pydantic import BaseModel, Field
 app = FastAPI(title="TenantAI AI Service")
 
 
-class Question(BaseModel):
-    text: str = Field(min_length=1, max_length=2000)
+class PredictRequest(BaseModel):
+    question: str = Field(min_length=1, max_length=2000)
+    project_name: str = Field(min_length=1, max_length=100)
+
+
+class PredictResponse(BaseModel):
+    answer: str
+    mode: str
 
 
 @app.get("/health")
@@ -14,10 +20,13 @@ def health():
     return {"status": "ok", "service": "ai-service"}
 
 
-@app.post("/predict")
-def predict(question: Question):
-    # Temporary mock: no paid API or model required.
-    return {
-        "answer": f"AI service received: {question.text}",
-        "mode": "mock"
-    }
+@app.post("/predict", response_model=PredictResponse)
+def predict(request: PredictRequest):
+    answer = (
+        f"You asked about '{request.project_name}': "
+        f"{request.question}\n\n"
+        "This is a mock AI response. "
+        "A real model will be connected later."
+    )
+
+    return PredictResponse(answer=answer, mode="mock")

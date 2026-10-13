@@ -33,6 +33,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     initialization
       .then((isAuthenticated) => {
+        console.log("Keycloak authenticated:", isAuthenticated);
+        console.log("Keycloak issuer:", keycloak.authServerUrl);
+        console.log("Keycloak realm:", keycloak.realm);
+        console.log("Keycloak client:", keycloak.clientId);
+        console.log("Keycloak token claims:", keycloak.tokenParsed);
         setAuthenticated(isAuthenticated);
         setToken(keycloak.token);
       })
