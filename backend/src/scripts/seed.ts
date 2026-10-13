@@ -61,20 +61,19 @@ async function main() {
   });
 
   await prisma.membership.upsert({
-    where: {
-      userId_organizationId: {
-        userId: bob.id,
-        organizationId: globex.id,
-      },
-    },
-    update: { role: MembershipRole.ADMIN },
-    create: {
+  where: {
+    userId_organizationId: {
       userId: bob.id,
       organizationId: globex.id,
-      role: MembershipRole.ADMIN,
     },
-  });
-
+  },
+  update: { role: MembershipRole.MEMBER },
+  create: {
+    userId: bob.id,
+    organizationId: globex.id,
+    role: MembershipRole.MEMBER,
+  },
+});
   // 4. Create demo projects
   await prisma.project.upsert({
     where: { id: "acme-demo-project" },

@@ -2,8 +2,11 @@
 import { after, describe, it } from "node:test";
 import assert from "node:assert/strict";
 import request from "supertest";
-import app from "../../app.js";
 import { prisma } from "../../lib/prisma.js";
+import { createApp } from "../../app.js";
+import { testAuth } from "./test-auth.js";
+
+const app = createApp(testAuth);
 
 const acmeHeaders = {
   "x-dev-user-email": "alice@acme.test",
@@ -25,7 +28,7 @@ describe("Projects API tenant isolation", () => {
     assert.ok(
       response.body.data.some(
         (project: { name: string }) =>
-          project.name === "Acme Dashboard",
+          project.name === "Acme Demo Project",
       ),
     );
     assert.ok(
@@ -57,10 +60,20 @@ describe("Projects API tenant isolation", () => {
     assert.ok(
       response.body.data.some(
         (project: { name: string }) =>
-          project.name === "Globex Analytics",
+          project.name === "Globex Demo Project",
       ),
     );
+
   });
+
+  it("prevents a regular member from creating projects", async () => {
+  const response = await request(app)
+    .post("/api/projects")
+    .set(globexHeaders)
+    .send({ name: `Unauthorized Project ${Date.now()}` });
+
+  assert.equal(response.status, 403);
+});
 
   it("creates a project within the authorized organization", async () => {
     const projectName = `Acme Test ${Date.now()}`;
@@ -91,6 +104,28 @@ describe("Projects API tenant isolation", () => {
 
     assert.equal(response.status, 401);
   });
+
+
+it("rejects project creation when the name is missing", async () => {
+  const response = await request(app)
+    .post("/api/projects")
+    .set(acmeHeaders)
+    .send({ description: "A project without a name" });
+
+  assert.equal(response.status, 400);
+  assert.equal(response.body.error, "Invalid project data");
+});
+
+it("rejects project creation when the name is blank", async () => {
+  const response = await request(app)
+    .post("/api/projects")
+    .set(acmeHeaders)
+    .send({ name: "   " });
+
+  assert.equal(response.status, 400);
+  assert.equal(response.body.error, "Invalid project data");
+});
+
 });
 
 after(async () => {

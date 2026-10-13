@@ -1,6 +1,9 @@
 import express from "express";
+import type { RequestHandler } from "express";
 import cors from "cors";
 import pinoHttp from "pino-http";
+import type { Options as PinoHttpOptions } from "pino-http";
+import type { IncomingMessage, ServerResponse } from "node:http";
 import { randomUUID } from "node:crypto";
 import { logger } from "./lib/logger.js";
 import projectRoutes from "./modules/projects/project.routes.js";
@@ -8,8 +11,10 @@ import aiRoutes from "./modules/ai/ai.routes.js";
 import { requireAuth } from "./middleware/auth.js";
 import { register, metricsMiddleware } from "./lib/metric.js";
 
-const app = express();
-
+export function createApp(
+  authMiddleware: RequestHandler = requireAuth,
+) {
+  const app = express();
 app.use(
   cors({
     origin: "http://localhost:3000",
@@ -25,28 +30,31 @@ app.use(
 
 app.use(express.json());
 
-app.use(
-  pinoHttp({
-    logger,
-    genReqId: (req) => {
-      const incoming = req.headers["x-request-id"];
+const pinoHttpOptions: PinoHttpOptions<
+  IncomingMessage,
+  ServerResponse
+> = {
+  logger,
+  genReqId: (req) => {
+    const incoming = req.headers["x-request-id"];
 
-      if (
-        typeof incoming === "string" &&
-        /^[a-zA-Z0-9-]{1,64}$/.test(incoming)
-      ) {
-        return incoming;
-      }
+    if (
+      typeof incoming === "string" &&
+      /^[a-zA-Z0-9-]{1,64}$/.test(incoming)
+    ) {
+      return incoming;
+    }
 
-      return randomUUID();
-    },
-    customProps: (req) => ({
-      requestId: req.id,
-    }),
+    return randomUUID();
+  },
+  customProps: (req) => ({
+    requestId: req.id,
   }),
-);
+};
+
+app.use(pinoHttp(pinoHttpOptions));
 app.use((req, res, next) => {
-  res.setHeader("x-request-id", req.id);
+  res.setHeader("x-request-id", String(req.id));
   next();
 });
 app.use(metricsMiddleware);
@@ -62,7 +70,12 @@ app.get("/metrics", async (_req, res) => {
   }
 });
 
-app.use("/api/projects", requireAuth, projectRoutes);
-app.use("/api/ai", requireAuth, aiRoutes);
+app.use("/api/projects", authMiddleware, projectRoutes);
+app.use("/api/ai", authMiddleware, aiRoutes);
+
+  return app;
+}
+
+const app = createApp();
 
 export default app;
