@@ -6,13 +6,19 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "db:seed": "tsx src/scripts/seed.ts",
-    "test": "tsx --test src/modules/projects/project.integration.test.ts src/modules/ai/ai.integration.test.ts"
+    "test": "tsx --test src/modules/projects/project.integration.test.ts src/modules/ai/ai.integration.test.ts",
+      "typecheck": "tsc --noEmit"
+
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "module",
   "dependencies": {
+    "@opentelemetry/auto-instrumentations-node": "^0.81.0",
+    "@opentelemetry/exporter-trace-otlp-proto": "^0.223.0",
+    "@opentelemetry/resources": "^2.12.0",
+    "@opentelemetry/sdk-node": "^0.223.0",
     "@prisma/client": "^6.19.3",
     "cors": "^2.8.6",
     "dotenv": "^18.0.7",

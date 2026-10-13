@@ -1,7 +1,7 @@
 import express from "express";
 import type { RequestHandler } from "express";
 import cors from "cors";
-import pinoHttp from "pino-http";
+import { pinoHttp } from "pino-http";
 import type { Options as PinoHttpOptions } from "pino-http";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { randomUUID } from "node:crypto";
