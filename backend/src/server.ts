@@ -1,6 +1,7 @@
 
 import "dotenv/config";
 import pino from "pino";
+import "./instrumentation.js"
 import app from "./app.js";
 
 const logger = pino();

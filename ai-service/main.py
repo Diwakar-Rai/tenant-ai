@@ -1,9 +1,10 @@
 
 from fastapi import FastAPI
 from pydantic import BaseModel, Field
+from telemetry import setup_telemetry
 
 app = FastAPI(title="TenantAI AI Service")
-
+setup_telemetry(app)
 
 class PredictRequest(BaseModel):
     question: str = Field(min_length=1, max_length=2000)

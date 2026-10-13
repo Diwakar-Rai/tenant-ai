@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { aiRepository } from "./ai.repository.js";
+import { logger } from "../../lib/logger.js";
 
 const aiResponseSchema = z.object({
   answer: z.string(),
@@ -76,7 +77,7 @@ export const aiService = {
       answer = result.answer;
       mode = result.mode;
     } catch (error) {
-      console.error("AI service request failed:", error);
+      logger.error({ err: error }, "AI service request failed");
       throw new AiServiceUnavailableError();
     }
 
