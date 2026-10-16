@@ -29,8 +29,7 @@ services:
       - "8081:8080"
     volumes:
       - ./keycloak:/opt/keycloak/data/import:ro
-  
-  
+
   jaeger:
     image: jaegertracing/all-in-one:1.76.0
     container_name: tenantai-jaeger
@@ -50,6 +49,16 @@ services:
       OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: http://jaeger:4318/v1/traces
     ports:
       - "8000:8000"
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     depends_on:
       - jaeger
 
@@ -73,10 +82,19 @@ services:
       postgres:
         condition: service_healthy
       ai-service:
-        condition: service_started
+        condition: service_healthy
       jaeger:
         condition: service_started
-
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3001/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
 
 volumes:
   tenantai-postgres-data:

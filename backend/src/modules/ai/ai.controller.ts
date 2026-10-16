@@ -1,10 +1,13 @@
 import type { Request, Response } from "express";
 import { z } from "zod";
 import {
+  AiServiceTimeoutError,
   AiAccessDeniedError,
   AiServiceUnavailableError,
   aiService,
 } from "./ai.service.js";
+import { AiCircuitOpenError } from "./aiCicuitBreaker.js";
+import { AiBulkheadFullError } from "./aiBulkhead.js";
 
 const questionSchema = z.object({
   question: z.string().trim().min(1).max(2000),
@@ -15,10 +18,30 @@ function handleError(res: Response, error: unknown) {
     return res.status(404).json({ error: error.message });
   }
 
+  if (error instanceof AiServiceTimeoutError) {
+    return res.status(504).json({ error: error.message });
+  }
+
+  if (error instanceof AiCircuitOpenError) {
+    res.setHeader("Retry-After", "15");
+
+    return res.status(503).json({
+      error: "AI service is temporarily unavailable",
+      retryAfterSeconds: 15,
+    });
+  }
+
   if (error instanceof AiServiceUnavailableError) {
     return res.status(502).json({ error: error.message });
   }
+  if (error instanceof AiBulkheadFullError) {
+    res.setHeader("Retry-After", "2");
 
+    return res.status(503).json({
+      error: "AI service is handling too many requests",
+      retryAfterSeconds: 2,
+    });
+  }
   console.error("AI API error:", error);
   return res.status(500).json({ error: "Internal server error" });
 }

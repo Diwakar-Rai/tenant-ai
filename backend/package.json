@@ -4,13 +4,13 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-  "dev": "tsx watch src/server.ts",
-  "build": "tsc",
-  "start": "node dist/server.js",
-  "db:seed": "tsx src/scripts/seed.ts",
-  "test": "tsx --test src/modules/projects/project.integration.test.ts src/modules/ai/ai.integration.test.ts",
-  "typecheck": "tsc --noEmit"
-},
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "db:seed": "tsx src/scripts/seed.ts",
+    "test": "tsx --test src/modules/projects/project.integration.test.ts src/modules/ai/ai.integration.test.ts src/modules/ai/aiBulkhead.test.ts src/middleware/aiRateLimiter.test.ts",
+    "typecheck": "tsc --noEmit"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
