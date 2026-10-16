@@ -1,11 +1,13 @@
 import type { Request, Response, NextFunction } from "express";
 import { createRemoteJWKSet, jwtVerify } from "jose";
 
-const issuer = "http://localhost:8081/realms/tenant-ai";
+const issuer =
+  process.env.KEYCLOAK_ISSUER ?? "http://localhost:8081/realms/tenant-ai";
 
-const jwks = createRemoteJWKSet(
-  new URL(`${issuer}/protocol/openid-connect/certs`),
-);
+const jwksUrl =
+  process.env.KEYCLOAK_JWKS_URL ?? `${issuer}/protocol/openid-connect/certs`;
+
+const jwks = createRemoteJWKSet(new URL(jwksUrl));
 
 declare global {
   namespace Express {
