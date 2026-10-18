@@ -47,6 +47,8 @@ services:
     restart: unless-stopped
     environment:
       OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: http://jaeger:4318/v1/traces
+      OLLAMA_BASE_URL: http://host.docker.internal:11434
+      OLLAMA_MODEL: llama3.2:1b
     ports:
       - "8000:8000"
     healthcheck:
@@ -96,5 +98,52 @@ services:
       retries: 3
       start_period: 15s
 
+  prometheus:
+    image: prom/prometheus:v3.8.0
+    container_name: tenantai-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - tenantai-prometheus-data:/prometheus
+      - ./monitoring/alerts.yml:/etc/prometheus/alerts.yml:ro
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+    depends_on:
+      - ai-service
+    restart: unless-stopped
+
+  alertmanager:
+    image: prom/alertmanager:v0.28.1
+    container_name: tenantai-alertmanager
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./monitoring/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - tenantai-alertmanager-data:/alertmanager
+    command:
+      - "--config.file=/etc/alertmanager/alertmanager.yml"
+      - "--storage.path=/alertmanager"
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:12.3.0
+    container_name: tenantai-grafana
+    ports:
+      - "3002:3000"
+    volumes:
+      - tenantai-grafana-data:/var/lib/grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
 volumes:
   tenantai-postgres-data:
+  tenantai-prometheus-data:
+  tenantai-grafana-data:
+  tenantai-alertmanager-data:

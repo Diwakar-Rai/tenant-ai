@@ -1,0 +1,41 @@
+
+groups:
+  - name: tenantai-ai-alerts
+    rules:
+      - alert: TenantAIHighAIErrorRate
+        expr: |
+          (
+            sum(rate(tenantai_ai_requests_total{status="error"}[5m]))
+            /
+            clamp_min(sum(rate(tenantai_ai_requests_total[5m])), 0.001)
+          ) > 0.20
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "TenantAI AI error rate is high"
+          description: "More than 20% of AI requests have failed over the last 5 minutes."
+
+      - alert: TenantAIHighAILatency
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum by (le) (
+              rate(tenantai_ai_request_duration_ms_milliseconds_bucket[5m])
+            )
+          ) > 30000
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: "TenantAI AI latency is high"
+          description: "The 95th-percentile AI response latency has exceeded 30 seconds for 3 minutes."
+
+      - alert: TenantAIAIServiceDown
+        expr: up{job="tenantai-ai-service"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "TenantAI AI service is unreachable"
+          description: "Prometheus cannot scrape the TenantAI AI service."

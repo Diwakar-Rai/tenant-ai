@@ -7,9 +7,10 @@ import { AiBulkheadFullError, aiBulkhead } from "./aiBulkhead.js";
 const aiResponseSchema = z.object({
   answer: z.string(),
   mode: z.string(),
+  latency_ms: z.number().nonnegative(),
 });
 
-const AI_TIMEOUT_MS = 10_000;
+const AI_TIMEOUT_MS = 95_000;
 const MAX_ATTEMPTS = 3;
 const BASE_RETRY_DELAY_MS = 500;
 
@@ -181,6 +182,7 @@ export const aiService = {
 
     let answer: string;
     let mode: string;
+    let latencyMs: number;
 
     try {
       const rawResult = await aiBulkhead.execute(() =>
@@ -196,6 +198,7 @@ export const aiService = {
 
       answer = result.answer;
       mode = result.mode;
+      latencyMs = result.latency_ms;
     } catch (error) {
       if (
         error instanceof AiServiceTimeoutError ||
@@ -217,15 +220,30 @@ export const aiService = {
 
       throw new AiServiceUnavailableError();
     }
+const interaction = await aiRepository.saveInteraction({
+  question,
+  answer,
+  mode,
+  userId: user.id,
+  organizationId: project.organizationId,
+  projectId: project.id,
+});
 
-    return aiRepository.saveInteraction({
-      question,
-      answer,
-      mode,
-      userId: user.id,
-      organizationId: project.organizationId,
-      projectId: project.id,
-    });
+logger.info(
+  {
+    event: "ai_request_succeeded",
+    latency_ms: latencyMs,
+    mode,
+    projectId: project.id,
+    organizationSlug,
+  },
+  "AI request completed successfully",
+);
+
+return {
+  ...interaction,
+  latency_ms: latencyMs,
+};
   },
 
   async history(

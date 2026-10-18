@@ -28,6 +28,7 @@ describe("AI API tenant isolation", () => {
         JSON.stringify({
           answer: "This is a test AI response.",
           mode: "mock",
+          latency_ms: 25,
         }),
         {
           status: 200,
