@@ -1,0 +1,7 @@
+﻿digraph G {
+  rankdir = "RL";
+  node [shape = rect, fontname = "sans-serif"];
+  "local_file.tenantai_config" [label="local_file.tenantai_config"];
+  "local_file.tenantai_manifest" [label="local_file.tenantai_manifest"];
+  "local_file.tenantai_manifest" -> "local_file.tenantai_config";
+}
